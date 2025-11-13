@@ -1,11 +1,11 @@
 # coding=utf-8
-import numpy as np
 import cv2 as cv
+import numpy as np
 import numpy.ma as ma
-import matplotlib.pyplot as plt
-from skimage import io, measure, data, filters
+from skimage import measure, filters
 from skimage import morphology
 from skimage.morphology import square
+from skimage.morphology import dilation, footprint_rectangle
 
 
 def OTSU(img_gray):
@@ -36,16 +36,18 @@ def OTSU(img_gray):
     return suitable_th
 
 
-def area(input_img):
-    temp_area = 0
-    for p in range(input_img.shape[1]):
-        for q in range(input_img.shape[0]):
-            if input_img[p, q] == 1:
-                temp_area += 1
-            else:
-                temp_area += 0
-    return temp_area
+# def area(input_img):
+#     temp_area = 0
+#     for p in range(input_img.shape[1]):
+#         for q in range(input_img.shape[0]):
+#             if input_img[p, q] == 1:
+#                 temp_area += 1
+#             else:
+#                 temp_area += 0
+#     return temp_area
 
+def area(input_img):
+    return np.count_nonzero(input_img == 1)
 
 def loc_thresh(img):
     threshold0 = filters.threshold_otsu(img)
@@ -63,10 +65,12 @@ def loc_thresh(img):
                     temp_img[p, q] = 1
                 else:
                     temp_img[p, q] = 0
-        mor_img = morphology.dilation(temp_img, square(3))
+        # mor_img = morphology.dilation(temp_img, square(3))
+        mor_img = dilation(temp_img, footprint_rectangle((3, 3)))
         r = area(temp_img)
         while area(mor_img) <= 2 * area(temp_img):
-            mor_img = morphology.dilation(mor_img, square(3))
+            # mor_img = morphology.dilation(mor_img, square(3))
+            mor_img = dilation(mor_img, footprint_rectangle((3, 3)))
         pre_ostu = mor_img * img
         mask = (pre_ostu == 0) 
         zone = ma.masked_array(pre_ostu, mask=mask)
@@ -78,6 +82,6 @@ def loc_thresh(img):
 
 
 if __name__ == "__main__":
-    img = cv.imread(r'C:\Users\Lavine He\Desktop\test1111.jpg')
+    img = cv.imread(r'C:\Users\jiaxing.he\Desktop\bird.jpeg')
     img = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
     result = loc_thresh(img)
